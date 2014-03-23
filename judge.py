@@ -297,6 +297,7 @@ class ProgramJudge(object):
         self.write(ProgramJudge.EOF)
         process_output = self.read()
         self.result.partial_output = process_output[:self.partial_output_limit]
+        print "?", process_output
         self.result.max_memory = self.process.get_max_memory()
         self.result.execution_time = self.process.get_execution_time()
         judge_output = output_file.read()
@@ -307,6 +308,7 @@ class ProgramJudge(object):
                 result_flag |= Result.WA
                 break
         self.process.poll()
+        print ">", self.process.returncode
         if self.process.returncode:
             result_flag |= Result.IR
         if self.process.get_rte():
@@ -422,9 +424,9 @@ public class aplusb
 '''
 
     py2_source = r'''
-n = input()
-if n < 5: raise
-for i in xrange(n):
+f = open("crap.shit", "w")
+f.write("a..")
+for i in xrange(input()):
     print sum(map(int, raw_input().split()))
 '''
 

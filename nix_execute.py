@@ -1,3 +1,4 @@
+import ctypes
 import sys
 import signal
 import os
@@ -66,6 +67,7 @@ if __name__ == "__main__":
     parser.add_argument("child_args", nargs="+", help="The child process path followed by arguments; relative allowed")
     parser.add_argument("-t", "--time", type=float, help="Time to limit process to, in seconds")
     parser.add_argument("-m", "--memory", type=int, help="Memory to limit process to, in kb")
+    parser.add_argument("-ns", "--no-syscall", action='store_true', help="If specified, blocks system calls")
     parsed = parser.parse_args()
 
     child = parsed.child_args[0]
@@ -94,6 +96,20 @@ if __name__ == "__main__":
         os.dup2(1, 2)
         # Close all file descriptors that are not standard
         os.closerange(3, os.sysconf("SC_OPEN_MAX"))
+
+        if parsed.no_syscall:
+            libc = ctypes.CDLL('libc.so.6')
+            PR_SET_SECCOMP = 22
+            SECCOMP_MODE_SCTRICT = 1
+            filter = '''sys_read: 1
+    sys_write: (fd == 1) || (fd == 2)
+    sys_exit: 1
+    sys_exit_group: 1
+    sys_mmap: 1
+    on_next_syscall: 1'''
+            if libc.prctl(PR_SET_SECCOMP, SECCOMP_MODE_SCTRICT):
+                raise SystemError("SET_SECCOMP failed with %d" % ctypes.get_errno())
+
         # Replace current process with the child process
         # This call does not return
         os.execvp(child, child_args)
